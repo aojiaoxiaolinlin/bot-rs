@@ -23,7 +23,7 @@ pub fn validate_webhook(payload: &QQBotEvent, secret: &str) -> ValidationRespons
     let ValidationRequest {
         event_ts,
         plain_token,
-    } = serde_json::from_value(payload.d.clone()).unwrap();
+    } = serde_json::from_value(payload.d.clone().unwrap_or_default()).unwrap();
 
     let mut seed = secret.to_owned();
     while seed.len() < ed25519_dalek::SECRET_KEY_LENGTH {

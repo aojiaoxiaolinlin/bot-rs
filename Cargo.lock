@@ -1322,6 +1322,7 @@ dependencies = [
  "langchain_core",
  "langchain_openai",
  "num_enum",
+ "rand",
  "reqwest 0.13.1",
  "serde",
  "serde_json",

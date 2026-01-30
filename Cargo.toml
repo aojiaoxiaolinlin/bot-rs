@@ -23,9 +23,11 @@ tracing-subscriber = "0.3.22"
 dotenv = "0.15.0"
 thiserror = "2.0.18"
 async-trait = "0.1.89"
+rand = "0.9.2"
 
 [dev-dependencies]
 anyhow = "1.0.100"
+tokio = { version = "1.49.0", features = ["test-util"] }
 
 [profile.dev]
 opt-level = 1

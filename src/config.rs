@@ -12,8 +12,9 @@ impl Config {
         dotenv().ok();
 
         Self {
-            app_id: env::var("QQ_APP_ID").expect("QQ_APP_ID 环境变量未设置"),
-            client_secret: env::var("QQ_CLIENT_SECRET").expect("QQ_CLIENT_SECRET 环境变量未设置"),
+            app_id: env::var("QQ_APP_ID").unwrap_or_else(|_| "102640909".to_string()),
+            client_secret: env::var("QQ_CLIENT_SECRET")
+                .unwrap_or_else(|_| "qU9oUArYGyhQAvgSE1ocQF4ulcUMF82w".to_string()),
         }
     }
 }

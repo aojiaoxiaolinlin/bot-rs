@@ -54,7 +54,7 @@ impl ServerBuilder {
         info!("启动中...");
         let client = QQClient::new(self.config.clone());
         info!("鉴权中...");
-        let _ = client.auth().await?;
+        client.auth().await?;
         let wss_url = client.get_wss_endpoint().await?;
 
         let token = client
@@ -81,8 +81,6 @@ impl ServerBuilder {
             .with_state(state);
 
         let listener = tokio::net::TcpListener::bind(addr).await?;
-
-        info!("机器人服务已就绪");
 
         axum::serve(listener, app).await?;
 
@@ -141,22 +139,26 @@ async fn qq_bot_event_handler(
 
 async fn dispatch_event(payload: QQBotEvent, state: AppState) -> Result<(), AppError> {
     if let Some(id) = &payload.id {
-        debug!(id);
+        debug!("Event ID: {}", id);
     }
     if let Some(t) = &payload.t {
-        debug!(t);
+        debug!("Event Type: {}", t);
 
         match EventType::from_str(t) {
-            Ok(EventType::GroupAtMessageCreate) => {
-                let message: GroupMessage = serde_json::from_value(payload.d)
-                    .map_err(|e| AppError::SerializationError(e))?;
+            Ok(ty) => match ty {
+                EventType::GroupAtMessageCreate => {
+                    let message: GroupMessage =
+                        serde_json::from_value(payload.d.unwrap_or_default())
+                            .map_err(AppError::SerializationError)?;
 
-                state
-                    .event_handler
-                    .on_group_at_message_create(message, &state.client)
-                    .await
-                    .map_err(AppError::ClientError)?;
-            }
+                    state
+                        .event_handler
+                        .on_group_at_message_create(message, &state.client)
+                        .await
+                        .map_err(AppError::ClientError)?;
+                }
+                _ => {}
+            },
             Err(err) => {
                 error!("Failed to parse event type: {}", err);
                 return Err(AppError::ValidationError(format!(
@@ -173,4 +175,6 @@ async fn dispatch_event(payload: QQBotEvent, state: AppState) -> Result<(), AppE
 pub enum EventType {
     #[strum(serialize = "GROUP_AT_MESSAGE_CREATE")]
     GroupAtMessageCreate,
+    #[strum(serialize = "READY")]
+    Ready,
 }

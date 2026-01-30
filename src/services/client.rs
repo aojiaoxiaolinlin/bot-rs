@@ -29,7 +29,7 @@ impl QQClient {
         let client = reqwest::Client::builder()
             .default_headers(headers)
             .build()
-            .expect("Failed to build reqwest client");
+            .expect("构建 reqwest 客户端失败");
 
         Self {
             client,
