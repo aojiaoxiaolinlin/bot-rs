@@ -24,7 +24,7 @@ src/
 ├── services/       # Core business logic
 │   ├── client.rs   # QQ API Client
 │   ├── server.rs   # WebHook / WebSocket Server
-│   └── websocket/  # WebSocket Client Module (New!)
+│   └── websocket/  # WebSocket Client Module
 │       ├── connection.rs # Connection management, Heartbeat, Resume
 │       ├── state.rs      # Session state management
 │       └── error.rs      # WebSocket errors
