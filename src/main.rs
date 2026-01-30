@@ -29,13 +29,11 @@ impl QQEvent for Handler {
         message: GroupMessage,
         client: &QQClient,
     ) -> Result<(), ClientError> {
-        debug!("处理...: {}", message.content);
         let state = self
             .agent
             .invoke(Message::user(message.content), None)
             .await
             .unwrap();
-        debug!("LLM 调用完成");
         let result = state.messages.last().unwrap().content().to_owned();
         debug!("result: {}", result);
 
