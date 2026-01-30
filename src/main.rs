@@ -13,6 +13,7 @@ use qq_bot::{
     services::{client::QQClient, server::ServerBuilder},
 };
 use tracing::debug;
+use tracing_subscriber::EnvFilter;
 
 const BASE_URL: &str = "https://api.siliconflow.cn/v1";
 const MODEL: &str = "deepseek-ai/DeepSeek-V3.2";
@@ -51,8 +52,11 @@ impl QQEvent for Handler {
 
 #[tokio::main]
 async fn main() {
+    let filter = EnvFilter::new("qq_bot=debug");
+
     tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
+        .with_env_filter(filter)
         .pretty()
         .init();
 
