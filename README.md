@@ -27,10 +27,8 @@ src/
 The application uses `dotenv` to load configuration from a `.env` file or environment variables.
 
 Supported variables:
-- `QQ_APP_ID`: App ID (default: 102640909)
+- `QQ_APP_ID`: App ID
 - `QQ_CLIENT_SECRET`: Client Secret
-- `QQ_BASE_URL`: API Base URL (default: https://api.sgroup.qq.com)
-- `QQ_AUTH_URL`: Auth URL (default: https://bots.qq.com/app/getAppAccessToken)
 
 ## Build and Run
 
