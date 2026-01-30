@@ -1,13 +1,19 @@
 use std::sync::{Arc, RwLock};
 
-use axum::http::{HeaderMap, HeaderValue};
-use reqwest::header::{AUTHORIZATION, CONTENT_TYPE};
-use serde::Deserialize;
+use reqwest::{
+    Response,
+    header::{AUTHORIZATION, CONTENT_TYPE, HeaderMap, HeaderValue},
+};
+use serde::{Deserialize, Serialize};
 use tracing::{debug, error};
 
 use crate::{
     config::Config,
-    models::{auth::AuthToken, client_error::ClientError, message::PostMessageBody},
+    models::{
+        auth::AuthToken,
+        client_error::ClientError,
+        message::{PostChannelMessageBody, PostMessageBody},
+    },
 };
 
 // 固定的QQ API地址
@@ -75,30 +81,28 @@ impl QQClient {
         group_openid: &str,
         body: PostMessageBody,
     ) -> Result<(), ClientError> {
-        let access_token = self
-            .get_access_token()
-            .ok_or_else(|| ClientError::Unknown("No access token available".to_string()))?;
-
         let url = format!("{}/v2/groups/{}/messages", QQ_BASE_URL, group_openid);
-        let response = self
-            .client
-            .post(url)
-            .header(AUTHORIZATION, format!("QQBot {access_token}"))
-            .json(&body)
-            .send()
-            .await?;
+        self.send(&url, &body).await?;
+        Ok(())
+    }
 
-        if !response.status().is_success() {
-            let status = response.status();
-            let text = response.text().await.unwrap_or_default();
-            error!("Failed to post message: {}", text);
-            return Err(ClientError::PostMessageFailed(format!(
-                "status: {}, response: {}",
-                status, text
-            )));
-        }
+    pub async fn post_c2c_message(
+        &self,
+        user_openid: &str,
+        body: PostMessageBody,
+    ) -> Result<(), ClientError> {
+        let url = format!("{}/v2/users/{}/messages", QQ_BASE_URL, user_openid);
+        self.send(&url, &body).await?;
+        Ok(())
+    }
 
-        debug!("Message posted successfully");
+    pub async fn post_channel_message(
+        &self,
+        channel_id: &str,
+        body: PostChannelMessageBody,
+    ) -> Result<(), ClientError> {
+        let url = format!("{}/v2/channels/{}/messages", QQ_BASE_URL, channel_id);
+        self.send(&url, &body).await?;
         Ok(())
     }
 
@@ -131,5 +135,36 @@ impl QQClient {
         let endpoint = response.json::<WssEndpoint>().await?;
         debug!("WSS Endpoint: {:?}", endpoint.url);
         Ok(endpoint.url)
+    }
+
+    async fn send<T: Serialize + ?Sized>(
+        &self,
+        url: &str,
+        body: &T,
+    ) -> Result<Response, ClientError> {
+        let access_token = self
+            .get_access_token()
+            .ok_or_else(|| ClientError::Unknown("No access token available".to_string()))?;
+
+        let response = self
+            .client
+            .post(url)
+            .header(AUTHORIZATION, format!("QQBot {access_token}"))
+            .json(body)
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let text = response.text().await.unwrap_or_default();
+            error!("Failed to post message: {}", text);
+            return Err(ClientError::PostMessageFailed(format!(
+                "status: {}, response: {}",
+                status, text
+            )));
+        }
+
+        debug!("Message posted successfully");
+        Ok(response)
     }
 }

@@ -54,9 +54,17 @@ impl PostMessageBody {
     }
 }
 
+#[derive(Debug, Clone, Serialize)]
+pub struct PostChannelMessageBody {
+    pub content: String,
+    pub image: Option<String>,
+    pub msg_id: Option<String>,
+    pub event_id: Option<String>,
+}
+
 #[derive(Debug, Clone, Deserialize)]
 pub struct GroupMessage {
-    pub author: Author,
+    pub author: GroupAuthor,
     pub content: String,
     pub group_id: String,
     pub group_openid: String,
@@ -67,10 +75,27 @@ pub struct GroupMessage {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct Author {
+pub struct GroupAuthor {
     pub id: String,
     pub member_openid: String,
     pub union_openid: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct C2CMessage {
+    pub author: C2CAuthor,
+    pub content: String,
+    pub id: String,
+    pub message_scene: MessageScene,
+    pub message_type: u8,
+    pub timestamp: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct C2CAuthor {
+    pub id: String,
+    pub union_openid: String,
+    pub user_openid: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]

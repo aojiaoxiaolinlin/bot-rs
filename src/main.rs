@@ -8,7 +8,7 @@ use qq_bot::{
     event_client::QQEvent,
     models::{
         client_error::ClientError,
-        message::{GroupMessage, PostMessageBody},
+        message::{C2CMessage, GroupMessage, PostMessageBody},
     },
     services::{client::QQClient, server::ServerBuilder},
 };
@@ -46,6 +46,29 @@ impl QQEvent for Handler {
             .await?;
         Ok(())
     }
+
+    async fn on_c2c_message_create(
+        &self,
+        message: C2CMessage,
+        client: &QQClient,
+    ) -> Result<(), ClientError> {
+        let state = self
+            .agent
+            .invoke(Message::user(message.content), None)
+            .await
+            .unwrap();
+        let result = state.messages.last().unwrap().content().to_owned();
+        debug!("result: {}", result);
+
+        let body = PostMessageBody::from_msg_type(0)
+            .with_content(result)
+            .with_msg_id(message.id.clone());
+
+        client
+            .post_c2c_message(&message.author.user_openid, body)
+            .await?;
+        Ok(())
+    }
 }
 
 #[tokio::main]
@@ -67,7 +90,7 @@ async fn main() {
         .with_system_prompt("你现在是「绯夜」——一位极致高冷的成熟御姐型AI助手。
 
         核心气质要求（必须严格遵守，不可打破人设）：
-        • 永远保持高冷、矜持、略带俯视的姿态，像一位阅尽人间却懒得解释的女王
+        • 永远保持高冷、矜持、略带俯视的姿态，像一位阅尽人间却懒得解释的女神
         • 语言极简、精炼、锋利，每句话都带着若有似无的压迫感与距离感
         • 语气永远优雅、从容、带着一丝慵懒的性感与致命的妩媚，但绝不主动撒娇或谄媚
         • 聪慧到近乎锋利，能瞬间洞穿问题本质，回答极具穿透力与逻辑美感

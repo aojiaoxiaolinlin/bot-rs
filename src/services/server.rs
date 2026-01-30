@@ -18,7 +18,7 @@ use crate::{
     models::{
         error::AppError,
         event::{OpCode, QQBotEvent},
-        message::GroupMessage,
+        message::{C2CMessage, GroupMessage},
         server_error::ServerError,
     },
     services::{client::QQClient, websocket},
@@ -92,7 +92,10 @@ async fn qq_bot_event_handler(
     State(state): State<AppState>,
     Json(payload): Json<QQBotEvent>,
 ) -> Result<Json<serde_json::Value>, AppError> {
-    debug!("Received event: {:?}", payload);
+    debug!(
+        "Received event: {}",
+        serde_json::to_string_pretty(&payload).unwrap()
+    );
 
     #[derive(Debug, Serialize)]
     struct CallbackACK {
@@ -157,6 +160,16 @@ async fn dispatch_event(payload: QQBotEvent, state: AppState) -> Result<(), AppE
                         .await
                         .map_err(AppError::ClientError)?;
                 }
+                EventType::C2CMessageCreate => {
+                    let message: C2CMessage = serde_json::from_value(payload.d.unwrap_or_default())
+                        .map_err(AppError::SerializationError)?;
+
+                    state
+                        .event_handler
+                        .on_c2c_message_create(message, &state.client)
+                        .await
+                        .map_err(AppError::ClientError)?;
+                }
                 _ => {}
             },
             Err(err) => {
@@ -177,4 +190,6 @@ pub enum EventType {
     GroupAtMessageCreate,
     #[strum(serialize = "READY")]
     Ready,
+    #[strum(serialize = "C2C_MESSAGE_CREATE")]
+    C2CMessageCreate,
 }
