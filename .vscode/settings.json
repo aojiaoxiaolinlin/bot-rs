@@ -1,0 +1,13 @@
+{
+    "cSpell.words": [
+        "Addrs",
+        "dalek",
+        "dotenv",
+        "repr",
+        "reqwest",
+        "serde",
+        "thiserror",
+        "tungstenite",
+        "wakeup"
+    ]
+}
