@@ -56,7 +56,7 @@ impl WebSocketManager {
         loop {
             match self.connect_and_loop().await {
                 Ok(_) => {
-                    info!("WebSocket 连接正常关闭");
+                    debug!("WebSocket 连接正常关闭");
                     self.resume_count = 0;
                 }
                 Err(e) => {
@@ -203,7 +203,7 @@ impl WebSocketManager {
                                 }
                                 OpCode::Reconnect => {
                                     debug!("服务端要求重连");
-                                    return Err(WebSocketError::ConnectionClosed);
+                                    return Ok(());
                                 }
                                 OpCode::Heartbeat => {
                                     // 服务端请求心跳，立即回复一次

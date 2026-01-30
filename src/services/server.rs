@@ -141,9 +141,6 @@ async fn qq_bot_event_handler(
 }
 
 async fn dispatch_event(payload: QQBotEvent, state: AppState) -> Result<(), AppError> {
-    if let Some(id) = &payload.id {
-        debug!("Event ID: {}", id);
-    }
     if let Some(t) = &payload.t {
         debug!("Event Type: {}", t);
 
