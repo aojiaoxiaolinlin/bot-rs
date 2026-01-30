@@ -1,3 +1,7 @@
+<div align="center">
+![bot-rs](https://socialify.git.ci/aojiaoxiaolinlin/bot-rs/image?font=Inter&language=1&name=1&owner=1&pattern=Floating+Cogs&stargazers=1&theme=Light)
+</div>
+
 # QQ Bot
 
 This is a Rust implementation of a QQ Bot using the official open API.
