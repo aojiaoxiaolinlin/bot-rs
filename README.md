@@ -15,7 +15,6 @@ The project has been refactored for better modularity and maintainability:
 ```
 src/
 ├── lib.rs          # Library root, exports modules
-├── main.rs         # Application entry point
 ├── config.rs       # Configuration management (Env vars)
 ├── models/         # Data models
 │   ├── auth.rs     # Authentication models

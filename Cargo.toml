@@ -8,9 +8,6 @@ axum = "0.8.8"
 ed25519-dalek = "2.2.0"
 futures-util = "0.3.31"
 hex = "0.4.3"
-langchain = { path = "../langchain-rs/crates/langchain" }
-langchain_core = { path = "../langchain-rs/crates/langchain_core" }
-langchain_openai = { path = "../langchain-rs/crates/langchain_openai" }
 num_enum = "0.7.5"
 reqwest = { version = "0.13.1", features = ["json"] }
 serde = { version = "1.0.228", features = ["derive"] }
@@ -27,6 +24,9 @@ rand = "0.9.2"
 
 [dev-dependencies]
 anyhow = "1.0.100"
+langchain = { path = "../langchain-rs/crates/langchain" }
+langchain_core = { path = "../langchain-rs/crates/langchain_core" }
+langchain_openai = { path = "../langchain-rs/crates/langchain_openai" }
 tokio = { version = "1.49.0", features = ["test-util"] }
 
 [profile.dev]
