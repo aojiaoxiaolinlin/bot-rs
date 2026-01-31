@@ -4,7 +4,7 @@ use std::sync::Arc;
 use axum::{
     Router,
     extract::{Json, State},
-    response::Result,
+    response::{IntoResponse, Response, Result},
     routing::post,
 };
 use serde::Serialize;
@@ -91,20 +91,19 @@ impl ServerBuilder {
 async fn qq_bot_event_handler(
     State(state): State<AppState>,
     Json(payload): Json<QQBotEvent>,
-) -> Result<Json<serde_json::Value>, AppError> {
+) -> Result<Response, AppError> {
     debug!(
         "Received event: {}",
-        serde_json::to_string_pretty(&payload).unwrap()
+        serde_json::to_string_pretty(&payload).unwrap_or_default()
     );
 
     #[derive(Debug, Serialize)]
     struct CallbackACK {
         op: u8,
     }
-    let callback_ack = serde_json::to_value(&CallbackACK {
+    let callback_ack = CallbackACK {
         op: OpCode::CallbackACK.into(),
-    })
-    .unwrap();
+    };
 
     match OpCode::try_from(payload.op) {
         Ok(op) => match op {
@@ -115,12 +114,12 @@ async fn qq_bot_event_handler(
                         error!("Error handling dispatch event: {:?}", e);
                     }
                 });
-                Ok(Json(callback_ack))
+                Ok(Json(callback_ack).into_response())
             }
             OpCode::WebhookValidate => {
                 // Handle webhook validation event
                 let response = validate_webhook(&payload, &state.config.client_secret);
-                Ok(Json(serde_json::to_value(response)?))
+                Ok(Json(response).into_response())
             }
             _ => {
                 error!("Received unsupported opcode: {}", payload.op);
