@@ -122,10 +122,10 @@ async fn qq_bot_event_handler(
                 Ok(Json(response).into_response())
             }
             _ => {
-                error!("Received unsupported opcode: {}", payload.op);
+                error!("Received unsupported opcode: {:?}", op);
                 Err(AppError::ValidationError(format!(
-                    "Unsupported opcode: {}",
-                    payload.op
+                    "Unsupported opcode: {:?}",
+                    op
                 )))
             }
         },
