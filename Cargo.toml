@@ -26,6 +26,7 @@ rand = "0.9.2"
 anyhow = "1.0.100"
 langchain = { path = "../langchain-rs/crates/langchain" }
 langchain_core = { path = "../langchain-rs/crates/langchain_core" }
+langgraph = { path = "../langchain-rs/crates/langgraph" }
 langchain_openai = { path = "../langchain-rs/crates/langchain_openai" }
 tokio = { version = "1.49.0", features = ["test-util"] }
 

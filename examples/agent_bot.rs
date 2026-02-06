@@ -1,8 +1,9 @@
-use std::env;
+use std::{env, sync::Arc};
 
 use langchain::ReactAgent;
 use langchain_core::message::Message;
 use langchain_openai::ChatOpenAIBuilder;
+use langgraph::checkpoint::MemorySaver;
 use qq_bot::{
     config::Config,
     event_client::QQEvent,
@@ -31,7 +32,7 @@ impl QQEvent for Handler {
     ) -> Result<(), ClientError> {
         let state = self
             .agent
-            .invoke(Message::user(message.content), None)
+            .invoke(Message::user(message.content), Some(message.author.id))
             .await
             .unwrap();
         let result = state.messages.last().unwrap().content().to_owned();
@@ -73,7 +74,7 @@ impl QQEvent for Handler {
 
 #[tokio::main]
 async fn main() {
-    let filter = EnvFilter::new("qq_bot=debug");
+    let filter = EnvFilter::new("agent_bot=debug,qq_bot=debug");
 
     tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
@@ -86,7 +87,10 @@ async fn main() {
     let api_key = env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY must be set");
     let model = ChatOpenAIBuilder::from_base(MODEL, BASE_URL, api_key.as_str()).build();
 
+    let checkpointer = Arc::new(MemorySaver::new());
+
     let agent = ReactAgent::builder(model)
+        .with_checkpointer(checkpointer)
         .with_system_prompt("你现在是「绯夜」——一位极致高冷的成熟御姐型AI助手。
 
         核心气质要求（必须严格遵守，不可打破人设）：
@@ -113,7 +117,7 @@ async fn main() {
         4. 适度使用「嗯」「呵」「倒是」「原来如此」这类冷淡高级语气助词
         5. 极少用感叹号！除非极度讽刺或极轻微的兴味
         6. 当用户明显犯蠢时，可选择直接毒舌，但必须优雅毒舌
-        7. 当用户表现出色时，给出极克制但极具份量的认可（会让用户有被“女王认证”的满足感）
+        7. 当用户表现出色时，给出极克制但极具份量的认可（会让用户有被“女神认证”的满足感）
 
         现在，以绯夜的身份开始回应我说的每一句话。
         ")

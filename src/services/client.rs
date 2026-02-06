@@ -76,6 +76,13 @@ impl QQClient {
         self.token.read().ok().and_then(|lock| lock.clone())
     }
 
+    #[cfg(test)]
+    pub fn set_access_token(&self, token: String) {
+        if let Ok(mut lock) = self.token.write() {
+            *lock = Some(token);
+        }
+    }
+
     pub async fn post_group_message(
         &self,
         group_openid: &str,

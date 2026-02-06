@@ -46,4 +46,10 @@ impl SessionState {
     pub async fn get_last_seq(&self) -> Option<u64> {
         self.data.read().await.last_seq
     }
+
+    pub async fn clear(&self) {
+        let mut data = self.data.write().await;
+        data.session_id = None;
+        data.last_seq = None;
+    }
 }

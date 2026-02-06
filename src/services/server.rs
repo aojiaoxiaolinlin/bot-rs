@@ -57,13 +57,10 @@ impl ServerBuilder {
         client.auth().await?;
         let wss_url = client.get_wss_endpoint().await?;
 
-        let token = client
-            .get_access_token()
-            .ok_or_else(|| ServerError::AccessTokenMissing)?;
-
         info!("会话启动中...");
+        let ws_client = client.clone();
         tokio::spawn(async move {
-            websocket::start(wss_url, token).await;
+            websocket::start(wss_url, ws_client).await;
         });
 
         let event_handler = self

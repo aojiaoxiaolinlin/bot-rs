@@ -19,9 +19,12 @@ pub enum WebSocketError {
 
     #[error("Send failed: {0}")]
     SendFailed(String),
-    
+
     #[error("Missing heartbeat interval in Hello payload")]
     MissingHeartbeatInterval,
+
+    #[error("Invalid Session")]
+    InvalidSession,
 
     #[error("Other error: {0}")]
     Other(String),

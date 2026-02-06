@@ -9,6 +9,7 @@ use tokio_tungstenite::{connect_async, tungstenite::Message};
 use tracing::{debug, error, info, warn};
 
 use crate::models::event::{OpCode, QQBotEvent};
+use crate::services::client::QQClient;
 use crate::services::server::EventType;
 use crate::services::websocket::error::WebSocketError;
 use crate::services::websocket::state::SessionState;
@@ -32,8 +33,8 @@ const RECONNECT_MAX_DELAY_MS: u64 = 5000;
 pub struct WebSocketManager {
     /// WebSocket 服务端地址
     wss_url: String,
-    /// 鉴权 Token
-    token: String,
+    /// QQ Client (用于获取 Token)
+    client: QQClient,
     /// 会话状态（Session ID, Last Seq）
     state: Arc<SessionState>,
     /// 当前连续 Resume 失败次数
@@ -42,11 +43,11 @@ pub struct WebSocketManager {
 
 impl WebSocketManager {
     /// 创建新的 WebSocket 管理器
-    pub async fn new(wss_url: String, token: String) -> Self {
+    pub async fn new(wss_url: String, client: QQClient) -> Self {
         let state = Arc::new(SessionState::new());
         Self {
             wss_url,
-            token,
+            client,
             state,
             resume_count: 0,
         }
@@ -60,12 +61,22 @@ impl WebSocketManager {
                     self.resume_count = 0;
                 }
                 Err(e) => {
-                    error!("WebSocket 异常断开: {:?}", e);
                     match e {
                         WebSocketError::HeartbeatTimeout
                         | WebSocketError::ConnectionClosed
                         | WebSocketError::Io(_) => {
+                            error!("WebSocket 异常断开: {:?}", e);
                             // 这些错误通常意味着网络问题，尝试 Resume
+                            self.handle_reconnect_delay().await;
+                        }
+                        WebSocketError::InvalidSession => {
+                            warn!("会话无效或过期，尝试重新鉴权...");
+                            if let Err(e) = self.client.auth().await {
+                                error!("重新鉴权失败: {:?}", e);
+                            } else {
+                                info!("重新鉴权成功，Token 已更新");
+                            }
+                            // 鉴权后等待一段时间再重连
                             self.handle_reconnect_delay().await;
                         }
                         _ => {
@@ -199,7 +210,7 @@ impl WebSocketManager {
                                     warn!("收到 InvalidSession，会话失效，清理状态");
                                     self.state.update(None, None).await?; // 清空状态
                                     // 这里返回错误，触发重连，重连时会因为没有状态而走 Identify
-                                    return Err(WebSocketError::Other("Invalid Session".to_string()));
+                                    return Err(WebSocketError::InvalidSession);
                                 }
                                 OpCode::Reconnect => {
                                     debug!("服务端要求重连");
@@ -274,10 +285,15 @@ impl WebSocketManager {
         S: SinkExt<Message> + Unpin,
         S::Error: std::error::Error + Send + Sync + 'static,
     {
+        let token = self
+            .client
+            .get_access_token()
+            .ok_or_else(|| WebSocketError::Other("Access Token missing".to_string()))?;
+
         let mut map = serde_json::Map::new();
         map.insert(
             "token".to_owned(),
-            serde_json::Value::String(format!("QQBot {}", self.token)),
+            serde_json::Value::String(format!("QQBot {}", token)),
         );
         map.insert("intents".to_owned(), serde_json::to_value(1 << 30).unwrap());
         map.insert("shard".to_owned(), serde_json::to_value([0, 1]).unwrap());
@@ -306,10 +322,15 @@ impl WebSocketManager {
         S: SinkExt<Message> + Unpin,
         S::Error: std::error::Error + Send + Sync + 'static,
     {
+        let token = self
+            .client
+            .get_access_token()
+            .ok_or_else(|| WebSocketError::Other("Access Token missing".to_string()))?;
+
         let mut map = serde_json::Map::new();
         map.insert(
             "token".to_owned(),
-            serde_json::Value::String(format!("QQBot {}", self.token)),
+            serde_json::Value::String(format!("QQBot {}", token)),
         );
         map.insert(
             "session_id".to_owned(),
@@ -365,7 +386,7 @@ impl WebSocketManager {
     }
 }
 
-pub async fn start(wss_url: String, token: String) {
-    let mut manager = WebSocketManager::new(wss_url, token).await;
+pub async fn start(wss_url: String, client: QQClient) {
+    let mut manager = WebSocketManager::new(wss_url, client).await;
     manager.start().await;
 }

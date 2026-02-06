@@ -1,5 +1,7 @@
 use super::connection::WebSocketManager;
+use crate::config::Config;
 use crate::models::event::{OpCode, QQBotEvent};
+use crate::services::client::QQClient;
 use futures_util::{SinkExt, StreamExt};
 use serde_json::json;
 use std::time::Duration;
@@ -96,22 +98,28 @@ async fn test_websocket_connect_and_identify() {
     let (url, _server_handle) = start_mock_server(1000).await;
     let token = "test_token".to_string();
 
-    let mut manager = WebSocketManager::new(url.clone(), token).await;
+    let config = Config {
+        app_id: "test_app_id".to_string(),
+        client_secret: "test_secret".to_string(),
+    };
+    let client = QQClient::new(config);
+    client.set_access_token(token.clone());
 
-    // Run for a short time
-    tokio::select! {
-        _ = manager.start() => {},
-        _ = tokio::time::sleep(Duration::from_millis(500)) => {} // Just enough to connect and identify
-    }
+    let mut manager = WebSocketManager::new(url.clone(), client).await;
 
-    // Check if session file created
-    // let content = tokio::fs::read_to_string(temp_file).await;
-    // assert!(content.is_ok());
-    // let data: serde_json::Value = serde_json::from_str(&content.unwrap()).unwrap();
-    // assert_eq!(data["session_id"], "test_session_id");
-    // assert_eq!(data["last_seq"], 1);
+    // Run start in a separate task so we can assert on connection status or wait for completion
+    // But start() loops forever unless connection closed or error.
+    // Our mock server closes connection after identify if we want, or we can just let it run a bit.
 
-    // let _ = tokio::fs::remove_file(temp_file).await;
+    // For this test, we just want to see if it sends Identify.
+    // The manager.start() loops. We can spawn it.
+
+    let _handle = tokio::spawn(async move {
+        manager.start().await;
+    });
+
+    // Let it run for a bit
+    tokio::time::sleep(Duration::from_millis(200)).await;
 }
 
 #[tokio::test]
@@ -142,7 +150,14 @@ async fn test_heartbeat_timeout() {
         }
     });
 
-    let mut manager = WebSocketManager::new(url, "token".into()).await;
+    let config = Config {
+        app_id: "test_app_id".to_string(),
+        client_secret: "test_secret".to_string(),
+    };
+    let client = QQClient::new(config);
+    client.set_access_token("token".into());
+
+    let mut manager = WebSocketManager::new(url, client).await;
 
     // We expect it to connect, send heartbeat, then timeout (after HEARTBEAT_TIMEOUT_SECONDS which is 2s in test), then reconnect
     // We can't easily verify the internal error, but we can verify it doesn't crash

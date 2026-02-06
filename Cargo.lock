@@ -1339,6 +1339,7 @@ dependencies = [
  "langchain",
  "langchain_core",
  "langchain_openai",
+ "langgraph",
  "num_enum",
  "rand",
  "reqwest 0.13.1",
