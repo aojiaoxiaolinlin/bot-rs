@@ -13,9 +13,11 @@ use crate::{
 pub trait QQEvent: Send + Sync {
     async fn on_group_at_message_create(
         &self,
-        message: GroupMessage,
-        client: &QQClient,
-    ) -> Result<(), ClientError>;
+        _message: GroupMessage,
+        _client: &QQClient,
+    ) -> Result<(), ClientError> {
+        Ok(())
+    }
 
     async fn on_c2c_message_create(
         &self,

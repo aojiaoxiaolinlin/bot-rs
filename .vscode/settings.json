@@ -5,6 +5,7 @@
         "dalek",
         "deepseek",
         "dotenv",
+        "langgraph",
         "repr",
         "reqwest",
         "serde",
